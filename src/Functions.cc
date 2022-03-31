@@ -31,7 +31,8 @@ double timeScale(double T_a, double T_r)
 double myfunc_DCR(double* x, double* par)
 {
   double xx = x[0];
-  
+
+  /*
   double x0 = par[4];
   
   double A = par[0];
@@ -40,9 +41,14 @@ double myfunc_DCR(double* x, double* par)
   double E = par[3];
   double B = D*E*exp(E*x0) - 2.*C*x0;
   double F = A + B*x0 + C*x0*x0 - D*exp(E*x0);
-
+  
   if( xx < x0 ) return A + B*xx + C*xx*xx;
   else          return D*exp(E*xx) + F;
+  */
+
+  double turnOff = 0.5 * ( 1. + TMath::Erf(-1.*(xx-par[0])/par[1]) );
+  double turnOn  = 0.5 * ( 1. + TMath::Erf(+1.*(xx-par[0])/par[1]) );
+  return exp(par[2]+par[3]*xx) + turnOff*exp(par[4]+par[5]*xx) + turnOn*exp(par[6]+par[7]*xx);
 }
 
 
