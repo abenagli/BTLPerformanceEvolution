@@ -53,13 +53,15 @@ int main(int argc, char** argv)
 
   double totFluence = opts.GetOpt<double>("Input.totFluence");
 
-  double DCRScale = opts.GetOpt<double>("Input.DCRScale");
-  double LOScale = opts.GetOpt<double>("Input.LOScale");
-  double gainScale = opts.GetOpt<double>("Input.gainScale");
-  double PDEScale = opts.GetOpt<double>("Input.PDEScale");
+  double DCRScale = opts.GetOpt<double>("Scalings.DCRScale");
+  double LOScale = opts.GetOpt<double>("Scalings.LOScale");
+  double gainScale = opts.GetOpt<double>("Scalings.gainScale");
+  double PDEScale = opts.GetOpt<double>("Scalings.PDEScale");
   
-  double Ncells = opts.GetOpt<double>("Input.Ncells");
-  double rechargeTime = opts.GetOpt<double>("Input.rechargeTime");
+  double Ncells = opts.GetOpt<double>("SiPM.Ncells");
+  double rechargeTime = opts.GetOpt<double>("SiPM.rechargeTime");
+
+  std::string outputLabel = opts.GetOpt<std::string>("Input.outputLabel");
   
   
   TGraph g_instLumi_vs_time, g_alpha_vs_time, g_alphaNorm_vs_time, g_instLumidark_vs_time, g_dcr_vs_time;
@@ -371,7 +373,7 @@ int main(int argc, char** argv)
   // compute optimum working point
   std::string TECsLabel = useTECs ? "_TECs" : "";
   std::string interfillLabel = interfillAnnealing ? "_interfillAnnealing" : "";
-  TFile* outFile = TFile::Open(Form("plots/outFile__LO%d_tau%.1f__%s_dropPDE%.2f_dropGain%.2f%s__noise%.0f__Top_%d_Tann1_%d_Tann2_%d%s__%s__maxPower%.0f.root",int(LO),taud,SiPMType.c_str(),dropPDE,dropGain,TECsLabel.c_str(),noiseTerm,int(T_op),int(T_ann),int(T_ann2),interfillLabel.c_str(),HLLHCScheduleLabel.c_str(),maxPower),"RECREATE");
+  TFile* outFile = TFile::Open(Form("plots/outFile__LO%d_tau%.1f__%s_dropPDE%.2f_dropGain%.2f%s__noise%.0f__Top_%d_Tann1_%d_Tann2_%d%s__%s__maxPower%.0f__%s.root",int(LO),taud,SiPMType.c_str(),dropPDE,dropGain,TECsLabel.c_str(),noiseTerm,int(T_op),int(T_ann),int(T_ann2),interfillLabel.c_str(),HLLHCScheduleLabel.c_str(),maxPower,outputLabel.c_str()),"RECREATE");
   
   TGraph g_tResBest_vs_time;
   TGraph g_tResBest_stoch_vs_time;
@@ -435,7 +437,9 @@ int main(int argc, char** argv)
   TF1* f_PDE = new TF1("f_PDE","[0]*(1-exp(-1.*[1]*x))",0.,10.);
   if( SiPMType == "HPK" ) f_PDE -> SetParameters(PDEScale*1.0228*0.384,PDEScale*0.583);
   if( SiPMType == "FBK" ) f_PDE -> SetParameters(PDEScale*0.8847*0.466,PDEScale*0.314);
-  std::cout << "PDE: " << f_PDE->Eval(3.5) << std::endl;
+  //if( SiPMType == "HPK" ) f_PDE -> SetParameters(PDEScale*1.0228*0.384,0.583);
+  //if( SiPMType == "FBK" ) f_PDE -> SetParameters(PDEScale*0.8847*0.466,0.314);
+  
   TFile* sipmParams;
   if( SiPMType == "HPK" ) sipmParams = TFile::Open("data/sipm_spec_input_HDR2-015-v2-1e13.root","READ");
   if( SiPMType == "FBK" ) sipmParams = TFile::Open("data/sipm_spec_input_FBK-W7C-1e13.root","READ");
@@ -455,7 +459,7 @@ int main(int argc, char** argv)
   TFile* inFile_TECsPower = TFile::Open("data/TECsPower.root");
   TF1* f_TECsPower_noSiPMLoad = (TF1*)( inFile_TECsPower->Get("f_noSiPMLoad") );
 
-  std::string slewRateLabel = opts.GetOpt<std::string>("Input.slewRateLabel");
+  std::string slewRateLabel = opts.GetOpt<std::string>("SiPM.slewRateLabel");
   TFile* inFile_slewRate_vs_amp = TFile::Open(slewRateLabel.c_str(),"READ");
   TGraph* g_slewRate_vs_amp = (TGraph*)( inFile_slewRate_vs_amp -> Get("g_SR") );
   TF1* f_slewRate_vs_amp = new TF1("f_slewRate_vs_amp",myfunc_amp,0.,10.,4);
@@ -507,7 +511,7 @@ int main(int argc, char** argv)
       f_DCRRef_vs_Vov -> SetParameter(iPar,DCRRef_pars[iPar]);
     }
     //float DCRRef = f_DCRRef_vs_Vov -> Eval(1.); // DCR at 1 V and - 30° C as per Carlos data
-    float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 1.5 V and - 40° C as per TB data
+    float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and - 40° C as per TB data
     
     float tResBest = 999999.;
     float tResBest_stoch = 999999.;
@@ -538,11 +542,8 @@ int main(int argc, char** argv)
       
       //-----------------------------------------------
       // evaluate effective DCR for a given OV and T_op
-      //float DCR = ( 14110. * alpha * 1.E-17 * totFluence ) * // from HPK2E14 used at TB (after 3.5d at 110° C, alpha is 1.24)
-      //            (f_DCRRef_vs_Vov->Eval(Vov)/DCRRef);   // morphing vs. OV using CERN Oct. TB data
-      //float DCR = ( 9280. * alpha * 1.E-17 * totFluence ) * // from HPK2E14 used at TB (after 3.5d at 110° C, alpha is 0.77!!! N.B. it depends on timeStep?), assume no gain loss (i.e. 24.5 GHz)
-      float DCR = ( 13700./8. * alpha * 1.E-17 * totFluence ) * // from HPK2E14 used at TB (after 3.5d at 110° C, alpha is 0.77!!! N.B. it depends on timeStep?), assume no gain loss (i.e. 24.5 GHz)
-                  (f_DCRRef_vs_Vov->Eval(Vov)/DCRRef) *       // morphing vs. OV using CERN Oct. TB data
+      float DCR = ( 16300./8. * alpha * 1.E-17 * totFluence ) * // from HPK2E14 used at TB (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 29. GHz at Vov = 1.5 V, DCR(1.5)/DCR(0.8)~8)
+                  (f_DCRRef_vs_Vov->Eval(Vov)/DCRRef) *         // morphing vs. OV using CERN Oct. TB data
                   ( DCRScale ) *
                   f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
         
@@ -580,9 +581,9 @@ int main(int argc, char** argv)
       // evaluate time resolution
       float nPE = 4.2 * LO * LOScale * (1-occupancy) * f_PDE->Eval(Vov)*(turnOn_PDE->Eval(fluence))/f_PDE_default->Eval(3.5);
       
-      float sigma_stoch = 30. * sqrt(7000./(nPE*38.5/taud));
+      float sigma_stoch = 27. * sqrt(7000./(nPE*38.5/taud));
       //float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
-      float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
+      float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
       float sigma_DCR   = 40. * 6000./(nPE*38.5/taud) * pow(DCR/30.,0.41);
       float sigma_clock = 15.;
       
