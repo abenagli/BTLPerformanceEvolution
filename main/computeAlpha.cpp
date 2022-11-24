@@ -103,14 +103,62 @@ int main(int argc, char** argv)
       theta = timeScale(effTemp, T_ref);
     }
     
-    //--- storage at CERN (2 weeks at -30° C)
-    else if( jmin < 43200 )
+    //--- storage at CERN (1 week at -30° C)
+    else if( jmin < 32920 )
     {
       effLumi = 0.;
       effTemp = -30.;
       theta = timeScale(effTemp, T_ref);
     }
 
+    //--- annealing 40 min 70° C
+    else if( jmin < 32960 )
+    {
+      effLumi = 0.;
+      effTemp = 70.;
+      theta = timeScale(effTemp, T_ref);
+    }
+
+    //--- measurement
+    else if( jmin < 35120 )
+    {
+      effLumi = 0.;
+      effTemp = 20.;
+      theta = timeScale(effTemp, T_ref);
+    }
+
+    //--- annealing 3 days at 90° C
+    else if( jmin < 39440 )
+    {
+      effLumi = 0.;
+      effTemp = 90.;
+      theta = timeScale(effTemp, T_ref);
+    }
+    
+    //--- measurement
+    else if( jmin < 41600 )
+    {
+      effLumi = 0.;
+      effTemp = 20.;
+      theta = timeScale(effTemp, T_ref);
+    }
+
+    //--- annealing 3 days at 110° C
+    else if( jmin < 45920 )
+    {
+      effLumi = 0.;
+      effTemp = 110.;
+      theta = timeScale(effTemp, T_ref);
+    }
+    
+    //--- measurement
+    else if( jmin < 48080 )
+    {
+      effLumi = 0.;
+      effTemp = 20.;
+      theta = timeScale(effTemp, T_ref);
+    }
+    
     //--- annealing
     else
     {

@@ -184,13 +184,13 @@ void drawConditionsPlot(const int& TECs)
   
   if( TECs == 1 )
   {
-    inFileNames.push_back("plots/outFile_HPK_PDELoss15p0_Top-45_Tann40_TECs_interfillAnnealing_HLLHCSchedule81_maxPower65.root");
+    inFileNames.push_back("../plots/outFile__LO1600__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
     colors.push_back(kRed);
     labels.push_back("HPK");
     
-    inFileNames.push_back("plots/outFile_FBK_Top-45_Tann40_TECs_interfillAnnealing_HLLHCSchedule81_maxPower65.root");
-    colors.push_back(kBlue);
-    labels.push_back("FBK");
+    //inFileNames.push_back("plots/outFile_FBK_Top-45_Tann40_TECs_interfillAnnealing_HLLHCSchedule81_maxPower65.root");
+    //colors.push_back(kBlue);
+    //labels.push_back("FBK");
 
     TECsLabel = "withTECs_";
   }
@@ -211,7 +211,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_nPEBest_vs_time", TECsLabel+"nPE_vs_time",
-           0., 0., 10., 12000,
+           0., 0., 13., 12000,
            "years from 2027", "N_{p.e.}");
   makePlot(inFileNames, colors, labels,
            "g_nPEBest_vs_intLumi", TECsLabel+"nPE_vs_intLumi",
@@ -220,7 +220,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_PDEBest_vs_time", TECsLabel+"PDE_vs_time",
-           0., 0., 10., 0.5,
+           0., 0., 13., 0.5,
            "years from 2027", "PDE");
   makePlot(inFileNames, colors, labels,
            "g_PDEBest_vs_intLumi", TECsLabel+"PDE_vs_intLumi",
@@ -229,7 +229,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_VovBest_vs_time", TECsLabel+"Vov_vs_time",
-           0., 0., 10., 6.,
+           0., 0., 13., 6.,
            "years from 2027", "V_{OV} [V]");
   makePlot(inFileNames, colors, labels,
            "g_VovBest_vs_intLumi", TECsLabel+"Vov_vs_intLumi",
@@ -238,7 +238,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_VbiasBest_vs_time", TECsLabel+"Vbias_vs_time",
-           0., 30., 10., 45.,
+           0., 30., 13., 45.,
            "years from 2027", "V_{bias} [V]");
   makePlot(inFileNames, colors, labels,
            "g_VbiasBest_vs_intLumi", TECsLabel+"Vbias_vs_intLumi",
@@ -247,7 +247,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_DCRBest_vs_time", TECsLabel+"DCR_vs_time",
-           0., 0., 10., 100.,
+           0., 0., 13., 100.,
            "years from 2027", "DCR [GHz]");
   makePlot(inFileNames, colors, labels,
            "g_DCRBest_vs_intLumi", TECsLabel+"DCR_vs_intLumi",
@@ -256,7 +256,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_gainBest_vs_time", TECsLabel+"gain_vs_time",
-           0., 0., 10., 8E05,
+           0., 0., 13., 8E05,
            "years from 2027", "gain");
   makePlot(inFileNames, colors, labels,
            "g_gainBest_vs_intLumi", TECsLabel+"gain_vs_intLumi",
@@ -265,7 +265,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_powerBest_vs_time", TECsLabel+"power_vs_time",
-           0., 0., 10., 80,
+           0., 0., 13., 80,
            "years from 2027", "total power / ch. [mW]");
   makePlot(inFileNames, colors, labels,
            "g_powerBest_vs_intLumi", TECsLabel+"power_vs_intLumi",
@@ -274,7 +274,7 @@ void drawConditionsPlot(const int& TECs)
   
   makePlot(inFileNames, colors, labels,
            "g_currentBest_vs_time", TECsLabel+"current_vs_time",
-           0., 0., 10., 2.5,
+           0., 0., 13., 2.5,
            "years from 2027", "total current / ch. [mA]");
   makePlot(inFileNames, colors, labels,
            "g_currentBest_vs_intLumi", TECsLabel+"current_vs_intLumi",

@@ -8,12 +8,12 @@ std::pair<std::vector<TGraphAsymmErrors*>,float> get_tRes_graphs(TGraph* g_tRes,
 
   float tRes_TDR_ave = 0.;
   int tRes_TDR_n = 0;
-
+  
   TF1* f_TDR = new TF1("f_TDR","30+28./10.*x",0.,20.);
   f_TDR -> SetLineColor(kBlack);
   f_TDR -> SetLineWidth(3);
   f_TDR -> SetLineStyle(7);
-  f_TDR -> Draw("same");
+  //f_TDR -> Draw("same");
   
   bool isTechStop = true;
   for(int point = 0; point < g_temp->GetN(); ++point)
@@ -1166,3 +1166,458 @@ void drawAlpha()
   c -> Print("alphaPlot.png");
 }
 
+
+
+
+void drawFinalPlot_final_HPK_dec21()
+{
+  gStyle->SetPadLeftMargin(0.10);
+  gStyle->SetPadRightMargin(0.05);
+  gStyle->SetTitleOffset(0.8, "Y");
+  
+  std::vector<std::string> inFileNames;
+  std::vector<std::string> inFileNames_up;
+  std::vector<std::string> inFileNames_down;
+  std::vector<int> colors;
+  std::vector<std::string> labels;
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.00_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80__type2.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(1);
+  labels.push_back("RU 2-3");
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.00_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80__type1.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kRed);
+  labels.push_back("RU 0-1");
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.00_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80__type3.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kBlue);
+  labels.push_back("RU 4-5");
+
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.00_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80__type2mod.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kGray);
+  labels.push_back("RU 2-3 (type1 thickness)");
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.00_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80__type3mod.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kBlue-7);
+  labels.push_back("RU 4-5 (type1 thickness)");
+  
+  /*
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  //inFileNames_up.push_back("../plots/outFile__LO1600_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower50.root");
+  //inFileNames_down.push_back("../plots/outFile__LO1600_tau38.5__HPK_dropPDE0.07_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_50_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*1);
+  labels.push_back("T_{annealing} = 40#circ C");
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_50_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*2);
+  labels.push_back("T_{annealing} = 50#circ C");
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*3);
+  labels.push_back("T_{annealing} = 60#circ C");
+  
+  inFileNames.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_70_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*4);
+  labels.push_back("T_{annealing} = 70#circ C");
+  
+  inFileNames.push_back("../plots/outFile__LO1600_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_80_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*5);
+  labels.push_back("T_{annealing} = 80#circ C");
+  
+  inFileNames.push_back("../plots/outFile__LO1600_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_90_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*6);
+  labels.push_back("T_{annealing} = 90#circ C");
+  
+  inFileNames.push_back("../plots/outFile__LO1600_tau38.5__HPK_dropPDE0.15_dropGain0.30_TECs__Top_-45_Tann1_15_Tann2_100_interfillAnnealing__HLLHCSchedule81__maxPower80.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(50+7*7);
+  labels.push_back("T_{annealing} = 100#circ C");
+  */
+  
+  TCanvas* c = new TCanvas("c","",1200,700);
+  c -> cd();
+  gPad -> SetGridx();
+  gPad -> SetGridy();
+  
+  TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,20.,13.,120.) );
+  hPad -> SetTitle(";years from 2027;#sigma_{t} [ps]");
+  hPad -> Draw();
+  
+  TLegend* legend = new TLegend(0.15,0.94-0.04*(inFileNames.size()+4),0.55,0.94);
+  legend -> SetFillColor(0);
+  legend -> SetFillStyle(1000);
+  legend -> SetTextFont(42);
+  legend -> SetTextSize(0.03);
+  
+  int it = 0;
+  for(auto inFileName : inFileNames)
+  {
+    std::cout << labels.at(it) << std::endl;
+    
+    TFile* inFile = TFile::Open(inFileName.c_str());
+    
+    TGraph* g = (TGraph*)( inFile->Get("g_tResBest_vs_time") );
+    TGraph* g_temp = (TGraph*)( inFile->Get("g_temp_vs_time") );
+    
+    float tResAve = 0.;
+    int N_tResAve = 0;
+    std::pair<std::vector<TGraphAsymmErrors*>,float> res = get_tRes_graphs(g,g_temp);
+    std::vector<TGraphAsymmErrors*> graphs = res.first;
+    
+    TGraph* g_up;
+    TGraph* g_down;
+    if( inFileNames_up.at(it) != "NULL" )
+    {
+      TFile* inFile_up = TFile::Open(inFileNames_up.at(it).c_str());
+      g_up = (TGraph*)( inFile_up->Get("g_tResBest_vs_time") );
+    }
+    if( inFileNames_down.at(it) != "NULL" )
+    {
+      TFile* inFile_down = TFile::Open(inFileNames_down.at(it).c_str());
+      g_down = (TGraph*)( inFile_down->Get("g_tResBest_vs_time") );
+    }
+    
+    int it2 = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(colors.at(it));
+      graph -> SetLineWidth(4);
+      if( it2 == 0 )
+        legend -> AddEntry(graph,(labels.at(it)).c_str(),"L");
+      ++it2;
+      
+      if( inFileNames_up.at(it) != "NULL" )
+      {
+        for(int point = 0; point < graph->GetN(); ++point)
+        {
+          double x = graph -> GetPointX(point);
+          double y = graph -> GetPointY(point);
+          double y_up = g_up -> Eval(x);
+          graph -> SetPointEYhigh(point,y_up-y);
+        }
+      }
+      if( inFileNames_down.at(it) != "NULL" )
+      {
+        for(int point = 0; point < graph->GetN(); ++point)
+        {
+          double x = graph -> GetPointX(point);
+          double y = graph -> GetPointY(point);
+          double y_down = g_down -> Eval(x);
+          graph -> SetPointEYlow(point,y-y_down);
+        }
+      }
+
+      graph -> SetFillColor(colors.at(it));
+      graph -> SetFillStyle(3001);
+      graph -> Draw("L3,same");
+    }
+    
+    /*
+    g = (TGraph*)( inFile->Get("g_tResBest_stoch_vs_time") );
+    res = get_tRes_graphs(g,g_temp);
+    graphs = res.first;
+    int it = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(kGreen);
+      graph -> SetLineWidth(4);
+      graph -> Draw("L,same");
+v      if( it == 0 )
+        legend -> AddEntry(graph,"stochastics","L");
+      ++it;
+    }
+    
+    
+    g = (TGraph*)( inFile->Get("g_tResBest_noise_vs_time") );
+    res = get_tRes_graphs(g,g_temp);
+    graphs = res.first;
+    it = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(kBlue);
+      graph -> SetLineWidth(4);
+      graph -> Draw("L,same");
+      if( it == 0 )
+        legend -> AddEntry(graph,"noise","L");
+      ++it;
+    }
+    
+
+    g = (TGraph*)( inFile->Get("g_tResBest_DCR_vs_time") );
+    res = get_tRes_graphs(g,g_temp);
+    graphs = res.first;
+    it = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(kRed);
+      graph -> SetLineWidth(4);
+      graph -> Draw("L,same");
+      if( it == 0 )
+        legend -> AddEntry(graph,"DCR","L");
+      ++it;
+    }
+    */
+    
+    ++it;
+  }
+
+  TF1* f_TDR = new TF1("f_TDR","30+28./10.*x",0.,20.);
+  f_TDR -> SetLineColor(kBlack);
+  f_TDR -> SetLineWidth(3);
+  f_TDR -> SetLineStyle(7);
+  f_TDR -> Draw("same");
+
+  legend -> AddEntry(f_TDR,"TDR goal","L");
+  
+  legend -> Draw("same");
+
+  c -> Print("HLLHC_final_HPK_tommaso.png");
+  c -> Print("HLLHC_final_HPK_tommaso.C");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+void drawFinalPlot_final_HPK_apr22()
+{
+  gStyle->SetPadLeftMargin(0.10);
+  gStyle->SetPadRightMargin(0.05);
+  gStyle->SetTitleOffset(0.8, "Y");
+  
+  std::vector<std::string> inFileNames;
+  std::vector<std::string> inFileNames_up;
+  std::vector<std::string> inFileNames_down;
+  std::vector<int> colors;
+  std::vector<std::string> labels;
+
+  /*
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__15um_final.root");
+  inFileNames_up.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower65__15um_final.root");
+  inFileNames_down.push_back("../plots/outFile__LO1300_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower80__15um_final.root");
+  colors.push_back(51+0);
+  labels.push_back("15 #mum cell size - MS SiPMs");
+  
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__20um_final.root");
+  inFileNames_up.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower65__20um_final.root");
+  inFileNames_down.push_back("../plots/outFile__LO1300_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower80__20um_final.root");
+  colors.push_back(51+15);
+  labels.push_back("20 #mum cell size");
+  
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__25um_final.root");
+  inFileNames_up.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower65__25um_final.root");
+  inFileNames_down.push_back("../plots/outFile__LO1300_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower80__25um_final.root");
+  colors.push_back(51+15*2);
+  labels.push_back("25 #mum cell size");
+
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__30um_final.root");
+  inFileNames_up.push_back("../plots/outFile__LO1200_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise335__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower65__30um_final.root");
+  inFileNames_down.push_back("../plots/outFile__LO1300_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower80__30um_final.root");
+  colors.push_back(51+15*3);
+  labels.push_back("30 #mum cell size");
+  */
+
+  /*
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__25um_final.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kBlue+1);
+  labels.push_back("25 #mum cell size - 40#circ C annealing");
+
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower72__25um_final.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kRed+1);
+  labels.push_back("25 #mum cell size - 60#circ C annealing");
+  */
+  
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__20um_final.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kBlue);
+  labels.push_back("20 #mum cell size - Cg = 100 pF");
+
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__20um_Cg20_final.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kRed);
+  labels.push_back("20 #mum cell size - Cg = 20 pF");
+
+  /*
+  inFileNames.push_back("../plots/outFile__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise420__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower72__25um_final.root");
+  inFileNames_up.push_back("NULL");
+  inFileNames_down.push_back("NULL");
+  colors.push_back(kRed+1);
+  labels.push_back("25 #mum cell size - bad TOFHIR2B");
+  */
+  
+  TCanvas* c = new TCanvas("c","",1200,700);
+  c -> cd();
+  gPad -> SetGridx();
+  gPad -> SetGridy();
+  
+  TH1F* hPad = (TH1F*)( gPad->DrawFrame(0.,30.,13.,120.) );
+  hPad -> SetTitle(";years from 2027;#sigma_{t} [ps]");
+  hPad -> Draw();
+  
+  TLegend* legend = new TLegend(0.15,0.94-0.04*(inFileNames.size()+4),0.45,0.94);
+  legend -> SetFillColor(0);
+  legend -> SetFillStyle(1000);
+  legend -> SetTextFont(42);
+  legend -> SetTextSize(0.05);
+  
+  int it = 0;
+  for(auto inFileName : inFileNames)
+  {
+    std::cout << labels.at(it) << std::endl;
+    
+    TFile* inFile = TFile::Open(inFileName.c_str());
+    
+    TGraph* g = (TGraph*)( inFile->Get("g_tResBest_vs_time") );
+    TGraph* g_temp = (TGraph*)( inFile->Get("g_temp_vs_time") );
+    
+    float tResAve = 0.;
+    int N_tResAve = 0;
+    std::pair<std::vector<TGraphAsymmErrors*>,float> res = get_tRes_graphs(g,g_temp);
+    std::vector<TGraphAsymmErrors*> graphs = res.first;
+    
+    TGraph* g_up;
+    TGraph* g_down;
+    if( inFileNames_up.at(it) != "NULL" )
+    {
+      TFile* inFile_up = TFile::Open(inFileNames_up.at(it).c_str());
+      g_up = (TGraph*)( inFile_up->Get("g_tResBest_vs_time") );
+    }
+    if( inFileNames_down.at(it) != "NULL" )
+    {
+      TFile* inFile_down = TFile::Open(inFileNames_down.at(it).c_str());
+      g_down = (TGraph*)( inFile_down->Get("g_tResBest_vs_time") );
+    }
+    
+    int it2 = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(colors.at(it));
+      graph -> SetLineWidth(5);
+      if( it2 == 0 )
+        legend -> AddEntry(graph,(labels.at(it)).c_str(),"L");
+      ++it2;
+      
+      if( inFileNames_up.at(it) != "NULL" )
+      {
+        for(int point = 0; point < graph->GetN(); ++point)
+        {
+          double x = graph -> GetPointX(point);
+          double y = graph -> GetPointY(point);
+          double y_up = g_up -> Eval(x);
+          graph -> SetPointEYhigh(point,y_up-y);
+        }
+      }
+      if( inFileNames_down.at(it) != "NULL" )
+      {
+        for(int point = 0; point < graph->GetN(); ++point)
+        {
+          double x = graph -> GetPointX(point);
+          double y = graph -> GetPointY(point);
+          double y_down = g_down -> Eval(x);
+          graph -> SetPointEYlow(point,y-y_down);
+        }
+      }
+
+      graph -> SetFillColor(colors.at(it));
+      graph -> SetFillStyle(3001);
+      graph -> Draw("L3,same");
+    }
+    
+    /*
+    g = (TGraph*)( inFile->Get("g_tResBest_stoch_vs_time") );
+    res = get_tRes_graphs(g,g_temp);
+    graphs = res.first;
+    int it = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(kGreen);
+      graph -> SetLineWidth(4);
+      graph -> Draw("L,same");
+v      if( it == 0 )
+        legend -> AddEntry(graph,"stochastics","L");
+      ++it;
+    }
+    
+    
+    g = (TGraph*)( inFile->Get("g_tResBest_noise_vs_time") );
+    res = get_tRes_graphs(g,g_temp);
+    graphs = res.first;
+    it = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(kBlue);
+      graph -> SetLineWidth(4);
+      graph -> Draw("L,same");
+      if( it == 0 )
+        legend -> AddEntry(graph,"noise","L");
+      ++it;
+    }
+    
+
+    g = (TGraph*)( inFile->Get("g_tResBest_DCR_vs_time") );
+    res = get_tRes_graphs(g,g_temp);
+    graphs = res.first;
+    it = 0;
+    for(auto graph : graphs)
+    {
+      graph -> SetLineColor(kRed);
+      graph -> SetLineWidth(4);
+      graph -> Draw("L,same");
+      if( it == 0 )
+        legend -> AddEntry(graph,"DCR","L");
+      ++it;
+    }
+    */
+    
+    ++it;
+  }
+  
+  /* TF1* f_TDR = new TF1("f_TDR","30+28./10.*x",0.,20.); */
+  /* f_TDR -> SetLineColor(kBlack); */
+  /* f_TDR -> SetLineWidth(3); */
+  /* f_TDR -> SetLineStyle(7); */
+  /* f_TDR -> Draw("same"); */
+
+  /* legend -> AddEntry(f_TDR,"TDR goal","L"); */
+  
+  legend -> Draw("same");
+
+  c -> Print("HLLHC_final_HPK_tommaso.png");
+  c -> Print("HLLHC_final_HPK_tommaso.C");
+}

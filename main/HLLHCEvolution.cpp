@@ -534,11 +534,13 @@ int main(int argc, char** argv)
     float staticCurrentBest = 0.;
     float tempBest = 999.;
     
-    //for(float effTECsDeltaT = 0; effTECsDeltaT < 20; effTECsDeltaT+=1)
-    float effTECsDeltaT = TECsDeltaT;
+    //float effTECsDeltaT = TECsDeltaT;
+    for(float effTECsDeltaT = 7; effTECsDeltaT < 15; effTECsDeltaT+=0.5)
     for(float Vov = 0.2; Vov < 5.; Vov += 0.01)
     {
       T_op = T_CO2 - effTECsDeltaT;
+      if( T_op < -50. ) continue;
+      
       
       //-----------------------------------------------
       // evaluate effective DCR for a given OV and T_op
@@ -563,17 +565,23 @@ int main(int argc, char** argv)
       float staticCurrent = DCR*1E09 * f_ENF->Eval(Vov) * gainScale * f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence)) * 1.602E-19;
       float staticPower = staticCurrent * (Vbr + Vov) * 1000.;   // in mW
       if( staticPower > maxPower ) continue;
+      if( staticCurrent*1000. > 50./16. ) continue; // current in mA, 50 mA is the ALDO limit
+      if( staticCurrent > 2./48./16. ) continue; // current in A, 2A is the PS limit, as per Krzysztof's plots
       
       float dynamicCurrent = (2.3*1E06 * instLumi * 5/7.5) * (4.2 * LO * LOScale * (1-occupancy) * f_PDE->Eval(Vov)*(turnOn_PDE->Eval(fluence))/f_PDE_default->Eval(3.5)) * f_ENF->Eval(Vov) * gainScale * f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence)) * 1.602E-19;   // 2.3 MHz equivalent MIP rate at 200 PU.
       float dynamicPower = dynamicCurrent * (Vbr + Vov) * 1000.;   // in mW
       if( (staticPower+dynamicPower) > maxPower ) continue;
-
+      if( (staticCurrent+dynamicCurrent)*1000. > 50./16. ) continue; // current in mA, 50 mA is the ALDO limit
+      if( (staticCurrent+dynamicCurrent) > 2./48./16. ) continue; // current in A, 2A is the PS limit, as per Krzysztof's plots
+      
       float TECsPower = 0.; // in mW per channel
       if( useTECs )
       {
         f_TECsPower_noSiPMLoad -> SetParameter(0.,(4./420.)*16.*(staticPower+dynamicPower));
         TECsPower = f_TECsPower_noSiPMLoad -> Eval(-1.*effTECsDeltaT) / 16.;
       }
+      if( TECsPower > 125. ) continue; // limit to 2W/array as per Krzysztof's plots, with some margin
+      
       if( (staticPower+dynamicPower+TECsPower) > maxPower ) continue;
       
       
