@@ -37,3 +37,6 @@
 
 # python compiled
 *.pyc
+
+# ROOT files
+*.root
