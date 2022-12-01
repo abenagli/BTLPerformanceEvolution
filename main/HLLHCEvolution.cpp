@@ -50,9 +50,9 @@ int main(int argc, char** argv)
   double taud = opts.GetOpt<double>("Input.taud");
   double dropPDE = opts.GetOpt<double>("Input.dropPDE");
   double dropGain = opts.GetOpt<double>("Input.dropGain");
-
+  
   double totFluence = opts.GetOpt<double>("Input.totFluence");
-
+  
   double DCRScale = opts.GetOpt<double>("Scalings.DCRScale");
   double LOScale = opts.GetOpt<double>("Scalings.LOScale");
   double gainScale = opts.GetOpt<double>("Scalings.gainScale");
@@ -112,8 +112,7 @@ int main(int argc, char** argv)
     double t_month = (year*12+month) * minInMonth; // in minutes
     
     
-    //---------------------------------------------------------------------------
-    // define luminosity and temperature for each period (with month granularity)
+    //--- define luminosity and temperature for each period (with month granularity)
     double theta = 1.;
     double temp;
     if( irr == 0 ) // technical stops - assume temperature T_ann
@@ -149,7 +148,7 @@ int main(int argc, char** argv)
       theta = timeScale(T_op, T_ref);
       temp = T_op;
     }
-
+    
     else if( irr == 10 || irr == 11 || irr == 12 || irr == 13 || irr == 14 ) // fake
     {
       lumi = 0.;
@@ -158,13 +157,12 @@ int main(int argc, char** argv)
     }
     
     
-    //----------------------------------------------------------------------------------
-    // further update luminosity and temperature  within a month (with timestep granularity)
+    //--- further update luminosity and temperature  within a month (with timestep granularity)
     for(int jmin = timeStep; jmin < minInMonth; jmin+=timeStep) // loop over 60*24*30=43200 minutes in a month 
     {
       float effLumi = lumi;
       float effTemp = temp;
-
+      
       //--- if TECs, assume 6 periods of 12 hours / month (10% of a month) at higher temperature for annealing
       
       if( interfillAnnealing && irr == 2 )
@@ -189,7 +187,7 @@ int main(int argc, char** argv)
           effTemp = T_op;
         }
       }
-
+      
       //--- assume 4 days for annealing at T_ann2 during the data taking, include interfill annealings
       
       if( irr == 9 || irr == 91 )
@@ -257,7 +255,7 @@ int main(int argc, char** argv)
           }
         }
       }
-
+      
       //--- fake, emulate fast annealing in the lab
       
       if( irr == 11 ) // 40 min at 70° C
@@ -275,7 +273,7 @@ int main(int argc, char** argv)
           effTemp = 20.;
         }
       }
-
+      
       if( irr == 12 ) // 3.5 days at 110° C
       {
         if( jmin > 38160 )
@@ -307,7 +305,7 @@ int main(int argc, char** argv)
           effTemp = 20.;
         }
       }
-
+      
       if( irr == 14 ) // 5 days at 90° C
       {
         if( jmin > 36000 )
@@ -323,7 +321,7 @@ int main(int argc, char** argv)
           effTemp = 20.;
         }
       }
-
+      
       //---
       
       g_instLumi_vs_time.SetPoint(g_instLumi_vs_time.GetN(), (jmin+t_month)/minInYear, effLumi);
@@ -336,9 +334,9 @@ int main(int argc, char** argv)
         vett[i] = alpha0[i]*tau[i]/(theta)*effLumi*(1-expl(-theta*timeStep/tau[i])) + (vett[i])*expl(-theta*timeStep/tau[i]);
         alpha += vett[i];
       }
-
+      
       //std::cout << "t_month: " << t_month << " (" << (jmin+t_month)/minInYear << ") " << "   effTemp: " << effTemp << "   theta: " << theta << "   alpha: " << alpha << std::endl;
-
+      
       g_alpha_vs_time.SetPoint(g_alpha_vs_time.GetN(),     (jmin+t_month)/minInYear, alpha);
       g_fluence_vs_time.SetPoint(g_fluence_vs_time.GetN(), (jmin+t_month)/minInYear,  norm);
       g_intLumi_vs_time.SetPoint(g_intLumi_vs_time.GetN(), (jmin+t_month)/minInYear,  norm);
@@ -390,6 +388,7 @@ int main(int argc, char** argv)
   TGraph g_powerBest_vs_time;
   TGraph g_staticPowerBest_vs_time;
   TGraph g_dynamicPowerBest_vs_time;
+  TGraph g_SiPMPowerBest_vs_time;
   TGraph g_TECsPowerBest_vs_time;
   TGraph g_currentBest_vs_time;
   TGraph g_staticCurrentBest_vs_time;
@@ -411,6 +410,7 @@ int main(int argc, char** argv)
   TGraph g_powerBest_vs_intLumi;
   TGraph g_staticPowerBest_vs_intLumi;
   TGraph g_dynamicPowerBest_vs_intLumi;
+  TGraph g_SiPMPowerBest_vs_intLumi;
   TGraph g_TECsPowerBest_vs_intLumi;
   TGraph g_currentBest_vs_intLumi;
   TGraph g_staticCurrentBest_vs_intLumi;
@@ -429,6 +429,7 @@ int main(int argc, char** argv)
   TGraph g_power_vs_Vov_EoO;
   TGraph g_dynamicPower_vs_Vov_EoO;
   TGraph g_staticPower_vs_Vov_EoO;
+  TGraph g_SiPMPower_vs_Vov_EoO;
   TGraph g_TECsPower_vs_Vov_EoO;
   
   TF1* f_PDE_default = new TF1("f_PDE_default","[0]*(1-exp(-1.*[1]*x))",0.,10.);
@@ -533,7 +534,7 @@ int main(int argc, char** argv)
     float dynamicCurrentBest = 0.;
     float staticCurrentBest = 0.;
     float tempBest = 999.;
-    
+
     //float effTECsDeltaT = TECsDeltaT;
     for(float effTECsDeltaT = 7; effTECsDeltaT < 15; effTECsDeltaT+=0.5)
     for(float Vov = 0.2; Vov < 5.; Vov += 0.01)
@@ -635,6 +636,7 @@ int main(int argc, char** argv)
         g_power_vs_Vov_EoO.SetPoint(g_power_vs_Vov_EoO.GetN(),Vov,staticPower+dynamicPower+TECsPower);
         g_dynamicPower_vs_Vov_EoO.SetPoint(g_dynamicPower_vs_Vov_EoO.GetN(),Vov,dynamicPower);
         g_staticPower_vs_Vov_EoO.SetPoint(g_staticPower_vs_Vov_EoO.GetN(),Vov,staticPower);
+        g_SiPMPower_vs_Vov_EoO.SetPoint(g_SiPMPower_vs_Vov_EoO.GetN(),Vov,staticPower+dynamicPower);
         g_TECsPower_vs_Vov_EoO.SetPoint(g_TECsPower_vs_Vov_EoO.GetN(),Vov,TECsPower);
       }
     }
@@ -655,6 +657,7 @@ int main(int argc, char** argv)
     g_powerBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,powerBest);
     g_dynamicPowerBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,dynamicPowerBest);
     g_staticPowerBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,staticPowerBest);
+    g_SiPMPowerBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,staticPowerBest+dynamicPowerBest);
     g_TECsPowerBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,TECsPowerBest);
     g_currentBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,currentBest);
     g_dynamicCurrentBest_vs_time.SetPoint(g_SoNBest_vs_time.GetN(),time,dynamicCurrentBest);
@@ -676,6 +679,7 @@ int main(int argc, char** argv)
     g_powerBest_vs_intLumi.SetPoint(g_powerBest_vs_intLumi.GetN(),intLumi,powerBest);
     g_dynamicPowerBest_vs_intLumi.SetPoint(g_dynamicPowerBest_vs_intLumi.GetN(),intLumi,dynamicPowerBest);
     g_staticPowerBest_vs_intLumi.SetPoint(g_staticPowerBest_vs_intLumi.GetN(),intLumi,staticPowerBest);
+    g_SiPMPowerBest_vs_intLumi.SetPoint(g_staticPowerBest_vs_intLumi.GetN(),intLumi,staticPowerBest+dynamicPowerBest);
     g_TECsPowerBest_vs_intLumi.SetPoint(g_TECsPowerBest_vs_intLumi.GetN(),intLumi,TECsPowerBest);
     g_currentBest_vs_intLumi.SetPoint(g_currentBest_vs_intLumi.GetN(),intLumi,currentBest);
     g_dynamicCurrentBest_vs_intLumi.SetPoint(g_dynamicCurrentBest_vs_intLumi.GetN(),intLumi,dynamicCurrentBest);
@@ -755,6 +759,8 @@ int main(int argc, char** argv)
   g_dynamicPowerBest_vs_time.Write("g_dynamicPowerBest_vs_time");
   g_staticPowerBest_vs_time.SetTitle(";years from 2027;static power per ch. at best #sigma_{t} [mW]");
   g_staticPowerBest_vs_time.Write("g_staticPowerBest_vs_time");
+  g_SiPMPowerBest_vs_time.SetTitle(";years from 2027;SiPM power per ch. at best #sigma_{t} [mW]");
+  g_SiPMPowerBest_vs_time.Write("g_SiPMPowerBest_vs_time");  
   g_TECsPowerBest_vs_time.SetTitle(";years from 2027;TECs power per ch. at best #sigma_{t} [mW]");
   g_TECsPowerBest_vs_time.Write("g_TECsPowerBest_vs_time");
   g_currentBest_vs_time.SetTitle(";years from 2027;total current per ch. at best #sigma_{t} [mA]");
@@ -763,7 +769,7 @@ int main(int argc, char** argv)
   g_dynamicCurrentBest_vs_time.Write("g_dynamicCurrentBest_vs_time");
   g_staticCurrentBest_vs_time.SetTitle(";years from 2027;static current per ch. at best #sigma_{t} [mA]");
   g_staticCurrentBest_vs_time.Write("g_staticCurrentBest_vs_time");
-  g_tempBest_vs_time.SetTitle(";years from 2027;temperature at best #sigma_{t} [mA]");
+  g_tempBest_vs_time.SetTitle(";years from 2027;temperature at best #sigma_{t} [#circ C]");
   g_tempBest_vs_time.Write("g_tempBest_vs_time");
   
   
@@ -797,6 +803,8 @@ int main(int argc, char** argv)
   g_dynamicPowerBest_vs_intLumi.Write("g_dynamicPowerBest_vs_intLumi");
   g_staticPowerBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];static power per ch. at best #sigma_{t} [mW]");
   g_staticPowerBest_vs_intLumi.Write("g_staticPowerBest_vs_intLumi");
+  g_SiPMPowerBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];SiPM power per ch. at best #sigma_{t} [mW]");
+  g_SiPMPowerBest_vs_intLumi.Write("g_SiPMPowerBest_vs_intLumi");  
   g_TECsPowerBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];TECs power per ch. at best #sigma_{t} [mW]");
   g_TECsPowerBest_vs_intLumi.Write("g_TECsPowerBest_vs_intLumi");
   g_currentBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];total current per ch. at best #sigma_{t} [mA]");
@@ -805,7 +813,7 @@ int main(int argc, char** argv)
   g_dynamicCurrentBest_vs_intLumi.Write("g_dynamicCurrentBest_vs_intLumi");
   g_staticCurrentBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];static current per ch. at best #sigma_{t} [mA]");
   g_staticCurrentBest_vs_intLumi.Write("g_staticCurrentBest_vs_intLumi");
-  g_tempBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];temp at best #sigma_{t} [mA]");
+  g_tempBest_vs_intLumi.SetTitle(";int. luminosity [fb^{-1}];temp at best #sigma_{t} [#circ C]");
   g_tempBest_vs_intLumi.Write("g_tempBest_vs_intLumi");
   
   g_tRes_vs_Vov_EoO.Write("g_tRes_vs_Vov_EoO");
@@ -820,6 +828,7 @@ int main(int argc, char** argv)
   g_power_vs_Vov_EoO.Write("g_power_vs_Vov_EoO");
   g_dynamicPower_vs_Vov_EoO.Write("g_dynamicPower_vs_Vov_EoO");
   g_staticPower_vs_Vov_EoO.Write("g_staticPower_vs_Vov_EoO");
+  g_SiPMPower_vs_Vov_EoO.Write("g_SiPMPower_vs_Vov_EoO");
   g_TECsPower_vs_Vov_EoO.Write("g_TECsPower_vs_Vov_EoO");
   
   int bytes = outFile -> Write();
