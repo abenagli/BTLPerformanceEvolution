@@ -27,14 +27,14 @@ ROOT.gROOT.SetBatch(True)
 
 infilenames = OrderedDict()
 
-#infilenames['1nominal'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__newHPKPars__final.root'
+infilenames['1nominal'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__newHPKPars__final.root'
 #infilenames['1nominalAnn'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__newHPKPars__final.root'
-#infilenames['2thicker'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__thicker__newHPKPars__final.root'
-#infilenames['3thickest'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__thickest__newHPKPars__final.root'
+infilenames['2thicker'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__thicker__newHPKPars__final.root'
+infilenames['3thickest'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_40_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__thickest__newHPKPars__final.root'
 
-infilenames['1-75 mW'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__newHPKPars__final.root'
-infilenames['2-50 mW'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower50__25um__RUs__newHPKPars__final.root'
-infilenames['3-100 mW'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower100__25um__RUs__newHPKPars__final.root'
+#infilenames['1-75 mW'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower75__25um__RUs__newHPKPars__final.root'
+#infilenames['2-50 mW'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower50__25um__RUs__newHPKPars__final.root'
+#infilenames['3-100 mW'] = '../plots/outFileRecHits__LO1265_tau38.5__HPK_dropPDE0.22_dropGain0.08_TECs__noise294__Top_-45_Tann1_15_Tann2_60_interfillAnnealing__HLLHCSchedule81__maxPower100__25um__RUs__newHPKPars__final.root'
 
 keys = infilenames.keys()
 labels = [ it for it in keys]
@@ -57,7 +57,7 @@ hPad.Draw()
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
 
-etas = [ 0.347, 0.661, 0.927, 1.148, 1.338 ]
+etas = [ 0.3520, 0.6645, 0.9310, 1.1550, 1.3440 ]
 it = 0
 for label in labels:
     p_tResBest_vs_eta[label].SetLineColor(1+it)
@@ -70,13 +70,13 @@ for label in labels:
     latex.SetTextSize(0.04)
     latex.SetTextColor(1+it)
     if label == '1nominal':
-        latex.DrawLatex(0.30,0.40-0.05*it,'T1-T1-T2-T2-T3-T3, annealing 40#circ C')
+        latex.DrawLatex(0.30,0.40-0.05*it,'RUs: 2#timesT1, 2#timesT2, 2#timesT3, annealing 40#circ C')
     if label == '1nominalAnn':
         latex.DrawLatex(0.30,0.40-0.05*it,'T1-T1-T2-T2-T3-T3, annealing 60#circ C')
     if label == '2thicker':
-        latex.DrawLatex(0.30,0.40-0.05*it,'T1-T1-T1-T2-T2-T2, annealing 60#circ C')
+        latex.DrawLatex(0.30,0.40-0.05*it,'RUs: 3#timesT1, 3#timesT2, annealing 40#circ C')
     if label == '3thickest':
-        latex.DrawLatex(0.30,0.40-0.05*it,'T1-T1-T1-T1-T1-T1, annealing 60#circ C')        
+        latex.DrawLatex(0.30,0.40-0.05*it,'RUs: 6#timesT1, annealing 40#circ C')        
     if label == '1-75 mW':
         latex.DrawLatex(0.30,0.40-0.05*it,'T1-T1-T2-T2-T3-T3, annealing 60#circ C, 75 mW/ch.')
     if label == '2-50 mW':

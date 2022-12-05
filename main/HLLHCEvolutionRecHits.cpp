@@ -22,6 +22,15 @@
 
 #define timeStep 60. // in minutes
 
+double* etaRanges = new double[] {
+    0.000, 0.0445, 0.0888, 0.1338, 0.1775, 0.2215, 0.2643, 0.3074,
+    0.3520, 0.3925, 0.4330, 0.4733, 0.5133, 0.5520, 0.5900, 0.6275,
+    0.6645, 0.7005, 0.7355, 0.7700, 0.8038, 0.8370, 0.8695, 0.9010,
+    0.9310, 0.9615, 0.9913, 1.0200, 1.0483, 1.0756, 1.1025, 1.1292,
+    1.1550, 1.1804, 1.2050, 1.2298, 1.2535, 1.2765, 1.3000, 1.3219,
+    1.3440, 1.3656, 1.3872, 1.4080, 1.4280, 1.4480, 1.4680, 1.4875,
+    1.5070 };
+
 
 
 int main(int argc, char** argv)
@@ -40,6 +49,7 @@ int main(int argc, char** argv)
   
   int useTECs = opts.GetOpt<int>("Input.useTECs");
   double TECsDeltaT = opts.GetOpt<double>("Input.TECsDeltaT");
+  int optimizeTECsDeltaT = opts.GetOpt<int>("Input.optimizeTECsDeltaT");
   
   int interfillAnnealing = opts.GetOpt<int>("Input.interfillAnnealing");
   double interfillTemp = opts.GetOpt<double>("Input.interfillTemp");
@@ -53,6 +63,7 @@ int main(int argc, char** argv)
   double dropGain = opts.GetOpt<double>("Input.dropGain");
   
   double totFluence = opts.GetOpt<double>("Input.totFluence");
+  double refTime = opts.GetOpt<double>("Input.refTime");
   
   double DCRScale = opts.GetOpt<double>("Scalings.DCRScale");
   double LOScale = opts.GetOpt<double>("Scalings.LOScale");
@@ -62,6 +73,9 @@ int main(int argc, char** argv)
   double Ncells = opts.GetOpt<double>("SiPM.Ncells");
   double rechargeTime = opts.GetOpt<double>("SiPM.rechargeTime");
 
+  std::string recHitsFileName = opts.GetOpt<std::string>("Input.recHitsFileName");
+  int crysLayout = opts.GetOpt<int>("Input.crysLayout");
+  
   std::string outputLabel = opts.GetOpt<std::string>("Input.outputLabel");
   
   
@@ -372,7 +386,9 @@ int main(int argc, char** argv)
   // define various parameters
   std::string TECsLabel = useTECs ? "_TECs" : "";
   std::string interfillLabel = interfillAnnealing ? "_interfillAnnealing" : "";
-  TFile* outFile = TFile::Open(Form("plots/outFileRecHits__LO%d_tau%.1f__%s_dropPDE%.2f_dropGain%.2f%s__noise%.0f__Top_%d_Tann1_%d_Tann2_%d%s__%s__maxPower%.0f__%s.root",int(LO),taud,SiPMType.c_str(),dropPDE,dropGain,TECsLabel.c_str(),noiseTerm,int(T_op),int(T_ann),int(T_ann2),interfillLabel.c_str(),HLLHCScheduleLabel.c_str(),maxPower,outputLabel.c_str()),"RECREATE");
+  std::string TopLabel = "opt";
+  if( !optimizeTECsDeltaT ) TopLabel = std::string(Form("%d",int(T_op)));
+  TFile* outFile = TFile::Open(Form("plots/outFileRecHits__LO%d_tau%.1f__%s_dropPDE%.2f_dropGain%.2f%s__noise%.0f__Top_%s_Tann1_%d_Tann2_%d%s__%s__maxPower%.0f__%s__refTime%.2f.root",int(LO),taud,SiPMType.c_str(),dropPDE,dropGain,TECsLabel.c_str(),noiseTerm,TopLabel.c_str(),int(T_ann),int(T_ann2),interfillLabel.c_str(),HLLHCScheduleLabel.c_str(),maxPower,outputLabel.c_str(),refTime),"RECREATE");
   
   TF1* f_PDE_default = new TF1("f_PDE_default","[0]*(1-exp(-1.*[1]*x))",0.,10.);
   if( SiPMType == "HPK" ) f_PDE_default -> SetParameters(1.0228*0.384,0.583);
@@ -437,7 +453,7 @@ int main(int argc, char** argv)
     
     if( v_instLumi == 0. ) continue;
     
-    if( v_time > 11.42 ) break;
+    if( v_time > refTime ) break;
   }    
   std::cout << "time: " << std::fixed << std::setprecision(3) << std::setw(5) << v_time << " y   "
             << "fluence: " << std::fixed << std::scientific << std::setprecision(3) << std::setw(5) << v_fluence
@@ -446,7 +462,7 @@ int main(int argc, char** argv)
 
   //---------------------------
   // get the tracks and recHits
-  TFile* inFile_recHits = TFile::Open("/Users/abenagli/Work/TIMING/TBStudies/data/TDR/CMSSW_10_4_0_mtd5/ntuple_MinBias_14TeV_barphiflat.root","READ");
+  TFile* inFile_recHits = TFile::Open(recHitsFileName.c_str());
   TTree* tree = (TTree*)( inFile_recHits->Get("FTLDumpHits/DumpHits") );
   int nEntries = tree->GetEntries();
   
@@ -458,15 +474,21 @@ int main(int argc, char** argv)
   std::vector<float>* tracks_mcMatch_genPt = new std::vector<float>;
   std::vector<float>* tracks_mcMatch_DR = new std::vector<float>;
   tree -> SetBranchStatus("track_pt",           1); tree -> SetBranchAddress("track_pt",           &tracks_pt);
-  tree -> SetBranchStatus("track_eta",          1); tree -> SetBranchAddress("track_eta",          &tracks_eta);
+  tree -> SetBranchStatus("track_eta_atBTL",    1); tree -> SetBranchAddress("track_eta_atBTL",    &tracks_eta);
   tree -> SetBranchStatus("track_phi",          1); tree -> SetBranchAddress("track_phi",          &tracks_phi);
   tree -> SetBranchStatus("track_mcMatch_genPt",1); tree -> SetBranchAddress("track_mcMatch_genPt",&tracks_mcMatch_genPt);
   tree -> SetBranchStatus("track_mcMatch_DR",   1); tree -> SetBranchAddress("track_mcMatch_DR",   &tracks_mcMatch_DR);
   
   std::vector<std::vector<int> >*   matchedRecHits_det = new std::vector<std::vector<int> >;
   std::vector<std::vector<float> >* matchedRecHits_energy = new std::vector<std::vector<float> >;
+std::vector<std::vector<int> >* matchedRecHits_runit = new std::vector<std::vector<int> >;
+  std::vector<std::vector<int> >* matchedRecHits_modType = new std::vector<std::vector<int> >;
+  std::vector<std::vector<int> >* matchedRecHits_module = new std::vector<std::vector<int> >;
   tree -> SetBranchStatus("matchedRecHits_det",1);        tree -> SetBranchAddress("matchedRecHits_det",        &matchedRecHits_det);
   tree -> SetBranchStatus("matchedRecHits_energy",1);     tree -> SetBranchAddress("matchedRecHits_energy",     &matchedRecHits_energy);
+  tree -> SetBranchStatus("matchedRecHits_runit",1);   tree -> SetBranchAddress("matchedRecHits_runit",   &matchedRecHits_runit);
+  tree -> SetBranchStatus("matchedRecHits_modType",1); tree -> SetBranchAddress("matchedRecHits_modType", &matchedRecHits_modType);
+  tree -> SetBranchStatus("matchedRecHits_module",1);  tree -> SetBranchAddress("matchedRecHits_module",  &matchedRecHits_module);
 
   
   //------------------
@@ -506,9 +528,13 @@ int main(int argc, char** argv)
     condBest_vs_RU[RUIt] = std::make_pair<float,float>(-999.,-999.);
   }
   
+
+  float TStart = 5.;
+  float TStop = 15.;
+  float TStep = 0.5;
+  if( !optimizeTECsDeltaT ) { TStart = TECsDeltaT; TStop = TECsDeltaT; }
   
-  //float effTECsDeltaT = TECsDeltaT;
-  for(float effTECsDeltaT = 5; effTECsDeltaT <= 15; effTECsDeltaT+=0.5)
+  for(float effTECsDeltaT = TStart; effTECsDeltaT <= TStop; effTECsDeltaT+=0.5)
   {
     std::cout << ">>> effTECsDeltaT: " << effTECsDeltaT << std::endl;
     
@@ -569,7 +595,7 @@ int main(int argc, char** argv)
       // evaluate time resolution
       TProfile* p_tRes_vs_RU = new TProfile("p_tRes_vs_RU","",6,0.5,6.5);
       
-      for(int entry = 0; entry < 10000; ++entry)
+      for(int entry = 0; entry < 50000; ++entry)
       {
         //if( entry%1000 == 0 ) std::cout << ">>> reading entry " << entry << " / " << nEntries << "\r" << std::endl;
         tree -> GetEntry(entry);
@@ -585,18 +611,38 @@ int main(int argc, char** argv)
           
           if( DR > 0.01 ) continue;
           if( fabs(pt/genPt-1.) > 0.05 ) continue; 
+
           
-          int RUId = -1.;
+          int seedIt = -1;
+          float seedE = -1.;
+          float totEnergy = 0;
+          for(unsigned int recHitIt = 0; recHitIt < (matchedRecHits_energy->at(trackIt)).size(); ++recHitIt)
+          {
+            if( (matchedRecHits_det->at(trackIt)).at(recHitIt) != 1 ) continue;
+            
+            float recHitE = (matchedRecHits_energy->at(trackIt)).at(recHitIt);
+            if( recHitE < 1. ) continue;
+            
+            if( recHitE > seedE )
+            {
+              seedE = recHitE;
+              seedIt = recHitIt;
+            }
+            
+            totEnergy += recHitE;
+          }
+          
+          if( totEnergy < 1. ) continue;
+          
+          int modType = (matchedRecHits_modType->at(trackIt)).at(seedIt);
+          int runit  = (matchedRecHits_runit->at(trackIt)).at(seedIt);
+          int RUId = crysLayout != 2 ? runit + (modType-1)*2 : (runit-1) + (modType-1)*3 + 1;
+          int moduleId = (matchedRecHits_module->at(trackIt)).at(seedIt)-1;
           float DCRCorr = 1.;
           float LOCorr = 1.;
-          if( feta > 0.000 && feta < 0.347 ) { RUId = 1; };
-          if( feta > 0.347 && feta < 0.661 ) { RUId = 2; };
-          if( feta > 0.661 && feta < 0.927 ) { RUId = 3; };
-          if( feta > 0.927 && feta < 1.148 ) { RUId = 4; };
-          if( feta > 1.148 && feta < 1.338 ) { RUId = 5; };
-          if( feta > 1.338 && feta < 1.498 ) { RUId = 6; };
           
-          if( RUId <= 0. ) continue;
+          if( moduleId >= 24 ) continue;
+          if( RUId < 1 || RUId > 6 ) continue;
           
           if( RUTypes[RUId] == 1 ) { DCRCorr *= 1.25; LOCorr *= 1.05; }
           if( RUTypes[RUId] == 3 ) { DCRCorr *= 0.8;  LOCorr *= 0.95; }
@@ -606,7 +652,7 @@ int main(int argc, char** argv)
           
           std::vector<float> Npes;
           std::vector<float> recHitEs;
-          float totEnergy = 0;
+          totEnergy = 0.;
           for(unsigned int recHitIt = 0; recHitIt < (matchedRecHits_energy->at(trackIt)).size(); ++recHitIt)
           {
             if( (matchedRecHits_det->at(trackIt)).at(recHitIt) != 1 ) continue;
@@ -637,7 +683,6 @@ int main(int argc, char** argv)
           }
           sigma_weighted = sqrt( 1./sigma_weighted );
           p_tRes_vs_RU -> Fill(RUId,sigma_weighted);
-          //std::cout << ">>>>>> RUId" << RUId << "   sigma: " << sigma_weighted << std::endl;
           
         } // loop over tracks
         
@@ -669,10 +714,10 @@ int main(int argc, char** argv)
   // final plots
   outFile -> cd();
 
-  TProfile* p_tResBest_vs_eta = new TProfile("p_tResBest_vs_eta","",48,0.,1.52);
-  TProfile* p_tResBest_stoch_vs_eta = new TProfile("p_tResBest_stoch_vs_eta","",48,0.,1.52);
-  TProfile* p_tResBest_noise_vs_eta = new TProfile("p_tResBest_noise_vs_eta","",48,0.,1.52);
-  TProfile* p_tResBest_DCR_vs_eta = new TProfile("p_tResBest_DCR_vs_eta","",48,0.,1.52);
+  TProfile* p_tResBest_vs_eta = new TProfile("p_tResBest_vs_eta","",48,etaRanges);
+  TProfile* p_tResBest_stoch_vs_eta = new TProfile("p_tResBest_stoch_vs_eta","",48,etaRanges);
+  TProfile* p_tResBest_noise_vs_eta = new TProfile("p_tResBest_noise_vs_eta","",48,etaRanges);
+  TProfile* p_tResBest_DCR_vs_eta = new TProfile("p_tResBest_DCR_vs_eta","",48,etaRanges);
 
   TProfile* p_VbiasBest_vs_RU = new TProfile("p_VbiasBest_vs_RU","",6,0.5,6.5);
   TProfile* p_VovBest_vs_RU = new TProfile("p_VovBest_vs_RU","",6,0.5,6.5);
@@ -758,17 +803,38 @@ int main(int argc, char** argv)
         
         if( DR > 0.01 ) continue;
         if( fabs(pt/genPt-1.) > 0.05 ) continue; 
+
+
+        int seedIt = -1;
+        float seedE = -1.;
+        float totEnergy = 0.;
+        for(unsigned int recHitIt = 0; recHitIt < (matchedRecHits_energy->at(trackIt)).size(); ++recHitIt)
+        {
+          if( (matchedRecHits_det->at(trackIt)).at(recHitIt) != 1 ) continue;
+          
+          float recHitE = (matchedRecHits_energy->at(trackIt)).at(recHitIt);
+          if( recHitE < 1. ) continue;
+          
+          if( recHitE > seedE )
+          {
+            seedE = recHitE;
+            seedIt = recHitIt;
+          }
+          
+          totEnergy += recHitE;
+        }
         
-        int RUId = -1.;
+        if( totEnergy < 1. ) continue;
+        
+        int modType = (matchedRecHits_modType->at(trackIt)).at(seedIt);
+        int runit  = (matchedRecHits_runit->at(trackIt)).at(seedIt);
+        int RUId = crysLayout != 2 ? runit + (modType-1)*2 : (runit-1) + (modType-1)*3 + 1;
+        int moduleId = (matchedRecHits_module->at(trackIt)).at(seedIt)-1;
         float DCRCorr = 1.;
         float LOCorr = 1.;
-        if( feta > 0.000 && feta < 0.347 ) { RUId = 1; };
-        if( feta > 0.347 && feta < 0.661 ) { RUId = 2; };
-        if( feta > 0.661 && feta < 0.927 ) { RUId = 3; };
-        if( feta > 0.927 && feta < 1.148 ) { RUId = 4; };
-        if( feta > 1.148 && feta < 1.338 ) { RUId = 5; };
-        if( feta > 1.338 && feta < 1.498 ) { RUId = 6; };
         
+        if( moduleId >= 24 ) continue;
+        if( RUId < 1 || RUId > 6 ) continue;
         if( RUId != RUIt ) continue;
         
         if( RUTypes[RUId] == 1 ) { DCRCorr *= 1.25; LOCorr *= 1.05; }
@@ -779,7 +845,7 @@ int main(int argc, char** argv)
         
         std::vector<float> Npes;
         std::vector<float> recHitEs;
-        float totEnergy = 0;
+        totEnergy = 0.;
         for(unsigned int recHitIt = 0; recHitIt < (matchedRecHits_energy->at(trackIt)).size(); ++recHitIt)
         {
           if( (matchedRecHits_det->at(trackIt)).at(recHitIt) != 1 ) continue;
