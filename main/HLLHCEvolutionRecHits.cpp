@@ -22,7 +22,7 @@
 
 #define timeStep 60. // in minutes
 
-double* etaRanges = new double[] {
+double etaRanges[49] = {
     0.000, 0.0445, 0.0888, 0.1338, 0.1775, 0.2215, 0.2643, 0.3074,
     0.3520, 0.3925, 0.4330, 0.4733, 0.5133, 0.5520, 0.5900, 0.6275,
     0.6645, 0.7005, 0.7355, 0.7700, 0.8038, 0.8370, 0.8695, 0.9010,
@@ -406,6 +406,7 @@ int main(int argc, char** argv)
   TF1* turnOn_gain = new TF1("turnOn_gain",Form("1-%.2f/2E14*x",dropGain),0.,2E14);
   
   TFile* inFile_DCRParams = TFile::Open("data/DCRParams_new_Dic2021.root","READ");
+  //TFile* inFile_DCRParams = TFile::Open("data/DCRParams_new_Jun2022.root","READ");
   int nParDCR = 8;
   std::map<int,TGraph*> g_DCR_pars;
   for(int iPar = 0; iPar < nParDCR; ++iPar)
@@ -514,9 +515,10 @@ std::vector<std::vector<int> >* matchedRecHits_runit = new std::vector<std::vect
     DCRRef_pars[iPar] = g_DCR_pars[iPar]->Eval(v_fluence);
     f_DCRRef_vs_Vov -> SetParameter(iPar,DCRRef_pars[iPar]);
   }
-  //float DCRRef = f_DCRRef_vs_Vov -> Eval(1.); // DCR at 1 V and - 30° C as per Carlos data
-  float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and - 40° C as per TB data
-
+  //float DCRRef = f_DCRRef_vs_Vov -> Eval(1.); // DCR at 1 V and - 30° C as per Carlos data                                                                                                                                                
+  float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and -40° C as per TB data, Dec. 2021                                                                                                                                         
+  //float DCRRef = f_DCRRef_vs_Vov -> Eval(0.9); // DCR at 0.9 V and -45° C as per Yuri data, Jun. 2022
+  
 
   //----------------------
   // optimize Vov and temp
@@ -553,11 +555,19 @@ std::vector<std::vector<int> >* matchedRecHits_runit = new std::vector<std::vect
         ( DCRScale ) *
         f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
       
+      // float DCR = ( 3150 * alpha * 1.E-17 * totFluence ) *   // from HPK2E14 used at TB and measured by Yuri (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 5.61. GHz at Vov = 0.9 V, I = 0.1 A)
+      //                  ( f_DCRRef_vs_Vov->Eval(Vov)/DCRRef ) *    // morphing vs. OV using Yuri measurements
+      //                  ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) *
+      //                  ( f_ENF->Eval(0.9)/f_ENF->Eval(Vov) ) *
+      //                  ( DCRScale ) *
+      //                  f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
+      
       if( SiPMType == "FBK" ) DCR *= 1.10;
       
       float B = -0.00416498*alpha + 0.0798623;   // DCR scaling with temperature, including dependence of scaling factor on alpha
       //DCR = DCR * exp(B*(T_op-(-35.)));
       DCR = DCR * exp(B*(T_op-(-40.)));
+      //DCR = DCR * exp(B*(T_op-(-45.)));
       
       
       // cell occupancy due to DCR -- assuming here 2 tau_R
@@ -671,7 +681,7 @@ std::vector<std::vector<int> >* matchedRecHits_runit = new std::vector<std::vect
           int jj = 0;
           for(auto nPE : Npes)
           {
-            float sigma_stoch = 27. * sqrt(7000./(nPE*38.5/taud));
+            float sigma_stoch = 28.4 * sqrt(7000./(nPE*38.5/taud));
             float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp[RUId]->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(v_fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
             float sigma_DCR   = 40. * 6000./(nPE*38.5/taud) * pow(DCR*DCRCorr/30.,0.41);
             float sigma_clock = 15.;
@@ -714,6 +724,8 @@ std::vector<std::vector<int> >* matchedRecHits_runit = new std::vector<std::vect
   // final plots
   outFile -> cd();
 
+  TH1F* h_tResBest_all = new TH1F("h_tResBest_all","",1000,0.,1000);
+  
   TProfile* p_tResBest_vs_eta = new TProfile("p_tResBest_vs_eta","",48,etaRanges);
   TProfile* p_tResBest_stoch_vs_eta = new TProfile("p_tResBest_stoch_vs_eta","",48,etaRanges);
   TProfile* p_tResBest_noise_vs_eta = new TProfile("p_tResBest_noise_vs_eta","",48,etaRanges);
@@ -882,7 +894,8 @@ std::vector<std::vector<int> >* matchedRecHits_runit = new std::vector<std::vect
         sigma_stoch_weighted = sqrt( 1./sigma_stoch_weighted );
         sigma_noise_weighted = sqrt( 1./sigma_noise_weighted );
         sigma_DCR_weighted = sqrt( 1./sigma_DCR_weighted );
-        
+	
+	h_tResBest_all -> Fill(sigma_weighted);
         p_tResBest_vs_eta -> Fill(feta,sigma_weighted);
         p_tResBest_stoch_vs_eta -> Fill(feta,sigma_stoch_weighted);
         p_tResBest_noise_vs_eta -> Fill(feta,sigma_noise_weighted);

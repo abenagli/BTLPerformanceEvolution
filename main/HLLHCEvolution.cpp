@@ -39,6 +39,7 @@ int main(int argc, char** argv)
   
   int useTECs = opts.GetOpt<int>("Input.useTECs");
   double TECsDeltaT = opts.GetOpt<double>("Input.TECsDeltaT");
+  int optimizeTECsDeltaT = opts.GetOpt<int>("Input.optimizeTECsDeltaT");
   
   int interfillAnnealing = opts.GetOpt<int>("Input.interfillAnnealing");
   double interfillTemp = opts.GetOpt<double>("Input.interfillTemp");
@@ -371,7 +372,9 @@ int main(int argc, char** argv)
   // compute optimum working point
   std::string TECsLabel = useTECs ? "_TECs" : "";
   std::string interfillLabel = interfillAnnealing ? "_interfillAnnealing" : "";
-  TFile* outFile = TFile::Open(Form("plots/outFile__LO%d_tau%.1f__%s_dropPDE%.2f_dropGain%.2f%s__noise%.0f__Top_%d_Tann1_%d_Tann2_%d%s__%s__maxPower%.0f__%s.root",int(LO),taud,SiPMType.c_str(),dropPDE,dropGain,TECsLabel.c_str(),noiseTerm,int(T_op),int(T_ann),int(T_ann2),interfillLabel.c_str(),HLLHCScheduleLabel.c_str(),maxPower,outputLabel.c_str()),"RECREATE");
+  std::string TopLabel = "opt";
+  if( !optimizeTECsDeltaT ) TopLabel = std::string(Form("%d",int(T_op)));  
+  TFile* outFile = TFile::Open(Form("plots/outFile__LO%d_tau%.1f__%s_dropPDE%.2f_dropGain%.2f%s__noise%.0f__Top_%s_Tann1_%d_Tann2_%d%s__%s__maxPower%.0f__%s.root",int(LO),taud,SiPMType.c_str(),dropPDE,dropGain,TECsLabel.c_str(),noiseTerm,TopLabel.c_str(),int(T_ann),int(T_ann2),interfillLabel.c_str(),HLLHCScheduleLabel.c_str(),maxPower,outputLabel.c_str()),"RECREATE");
   
   TGraph g_tResBest_vs_time;
   TGraph g_tResBest_stoch_vs_time;
@@ -450,6 +453,7 @@ int main(int argc, char** argv)
   TF1* turnOn_gain = new TF1("turnOn_gain",Form("1-%.2f/2E14*x",dropGain),0.,2E14);
   
   TFile* inFile_DCRParams = TFile::Open("data/DCRParams_new_Dic2021.root","READ");
+  //TFile* inFile_DCRParams = TFile::Open("data/DCRParams_new_Jun2022.root","READ");
   int nParDCR = 8;
   std::map<int,TGraph*> g_DCR_pars;
   for(int iPar = 0; iPar < nParDCR; ++iPar)
@@ -481,8 +485,11 @@ int main(int argc, char** argv)
               << " y   fluence: " << std::fixed << std::scientific << std::setprecision(3) << std::setw(5) << fluence << "\r" << std::flush;
     if( instLumi == 0. ) continue;
     
+    // bool isEoO = false;
+    // if( time > 11.42 && g_tRes_vs_Vov_EoO.GetN() == 0 )
+    //   isEoO = true;
     bool isEoO = false;
-    if( time > 11.42 && g_tRes_vs_Vov_EoO.GetN() == 0 )
+    if( time > 12.39 && g_tRes_vs_Vov_EoO.GetN() == 0 )
       isEoO = true;
     
     
@@ -512,7 +519,8 @@ int main(int argc, char** argv)
       f_DCRRef_vs_Vov -> SetParameter(iPar,DCRRef_pars[iPar]);
     }
     //float DCRRef = f_DCRRef_vs_Vov -> Eval(1.); // DCR at 1 V and - 30° C as per Carlos data
-    float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and - 40° C as per TB data
+    float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and -40° C as per TB data, Dec. 2021
+    //float DCRRef = f_DCRRef_vs_Vov -> Eval(0.9); // DCR at 0.9 V and -45° C as per Yuri data, Jun. 2022
     
     float tResBest = 999999.;
     float tResBest_stoch = 999999.;
@@ -534,9 +542,13 @@ int main(int argc, char** argv)
     float dynamicCurrentBest = 0.;
     float staticCurrentBest = 0.;
     float tempBest = 999.;
-
-    //float effTECsDeltaT = TECsDeltaT;
-    for(float effTECsDeltaT = 7; effTECsDeltaT < 15; effTECsDeltaT+=0.5)
+    
+    float TStart = 5.;
+    float TStop = 15.;
+    float TStep = 0.5;
+    if( !optimizeTECsDeltaT ) { TStart = TECsDeltaT; TStop = TECsDeltaT; } 
+    
+    for(float effTECsDeltaT = TStart; effTECsDeltaT <= TStop; effTECsDeltaT+=0.5)
     for(float Vov = 0.2; Vov < 5.; Vov += 0.01)
     {
       T_op = T_CO2 - effTECsDeltaT;
@@ -549,12 +561,20 @@ int main(int argc, char** argv)
                   (f_DCRRef_vs_Vov->Eval(Vov)/DCRRef) *         // morphing vs. OV using CERN Oct. TB data
                   ( DCRScale ) *
                   f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
-        
+      
+      // float DCR = ( 3150 * alpha * 1.E-17 * totFluence ) *   // from HPK2E14 used at TB and measured by Yuri (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 5.61. GHz at Vov = 0.9 V, I = 0.1 A)
+      //                  ( f_DCRRef_vs_Vov->Eval(Vov)/DCRRef ) *    // morphing vs. OV using Yuri measurements
+      //                  ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) *
+      //                  ( f_ENF->Eval(0.9)/f_ENF->Eval(Vov) ) *
+      //                  ( DCRScale ) *
+      //                  f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
+      
       if( SiPMType == "FBK" ) DCR *= 1.10;
       
       float B = -0.00416498*alpha + 0.0798623;   // DCR scaling with temperature, including dependence of scaling factor on alpha
       //DCR = DCR * exp(B*(T_op-(-35.)));
       DCR = DCR * exp(B*(T_op-(-40.)));
+      //DCR = DCR * exp(B*(T_op-(-45.)));
       
 
       // cell occupancy due to DCR -- assuming here 2 tau_R
@@ -590,8 +610,7 @@ int main(int argc, char** argv)
       // evaluate time resolution
       float nPE = 4.2 * LO * LOScale * (1-occupancy) * f_PDE->Eval(Vov)*(turnOn_PDE->Eval(fluence))/f_PDE_default->Eval(3.5);
       
-      float sigma_stoch = 27. * sqrt(7000./(nPE*38.5/taud));
-      //float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
+      float sigma_stoch = 28. * sqrt(7000./(nPE*38.5/taud));
       float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
       float sigma_DCR   = 40. * 6000./(nPE*38.5/taud) * pow(DCR/30.,0.41);
       float sigma_clock = 15.;
@@ -624,6 +643,8 @@ int main(int argc, char** argv)
 
       if( isEoO )
       {
+	std::cout << "Vov: " << Vov << "   alpha: " << alpha << "   CurrRatio:  " << f_DCRRef_vs_Vov->Eval(Vov)/DCRRef << "   GainScale: " << ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) << "   PDEScale: " << f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov) << "   DCR: " << DCR << std::endl;
+	
         g_tRes_vs_Vov_EoO.SetPoint(g_tRes_vs_Vov_EoO.GetN(),Vov,tResCurr);
         g_tRes_stoch_vs_Vov_EoO.SetPoint(g_tRes_stoch_vs_Vov_EoO.GetN(),Vov,sigma_stoch);
         g_tRes_noise_vs_Vov_EoO.SetPoint(g_tRes_noise_vs_Vov_EoO.GetN(),Vov,sigma_noise);
