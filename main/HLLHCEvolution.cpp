@@ -250,8 +250,8 @@ int main(int argc, char** argv)
             }
             if( irr == 91 )
             {
-              theta = timeScale(0., T_ref);
-              effTemp = 0.;
+              theta = timeScale(T_ann, T_ref);
+              effTemp = T_ann;
             }
           }
         }
@@ -362,7 +362,7 @@ int main(int argc, char** argv)
     g_fluence_vs_time.SetPoint(point,x,y/norm*totFluence);
 
     g_intLumi_vs_time.GetPoint(point,x,y);
-    g_intLumi_vs_time.SetPoint(point,x,y/norm*3000);
+    g_intLumi_vs_time.SetPoint(point,x,y/norm*2800);
   }
   
   
@@ -425,8 +425,7 @@ int main(int argc, char** argv)
   TGraph g_tRes_noise_vs_Vov_EoO;
   TGraph g_tRes_DCR_vs_Vov_EoO;
   TGraph g_DCR_vs_Vov_EoO;
-  TGraph g_PDE_vs_Vov_EoO;
-  TGraph g_nPE_vs_Vov_EoO;
+  TGraph g_PDE_vs_Vov_EoO;  TGraph g_nPE_vs_Vov_EoO;
   TGraph g_occupancy_vs_Vov_EoO;
   TGraph g_gain_vs_Vov_EoO;
   TGraph g_power_vs_Vov_EoO;
@@ -439,16 +438,25 @@ int main(int argc, char** argv)
   if( SiPMType == "HPK" ) f_PDE_default -> SetParameters(1.0228*0.384,0.583);
   if( SiPMType == "FBK" ) f_PDE_default -> SetParameters(0.8847*0.466,0.314);
   TF1* f_PDE = new TF1("f_PDE","[0]*(1-exp(-1.*[1]*x))",0.,10.);
-  if( SiPMType == "HPK" ) f_PDE -> SetParameters(PDEScale*1.0228*0.384,PDEScale*0.583);
-  if( SiPMType == "FBK" ) f_PDE -> SetParameters(PDEScale*0.8847*0.466,PDEScale*0.314);
-  //if( SiPMType == "HPK" ) f_PDE -> SetParameters(PDEScale*1.0228*0.384,0.583);
-  //if( SiPMType == "FBK" ) f_PDE -> SetParameters(PDEScale*0.8847*0.466,0.314);
+  double PDEPar0 = opts.GetOpt<double>("SiPM.PDEPar0");
+  double PDEPar1 = opts.GetOpt<double>("SiPM.PDEPar1");
+  f_PDE -> SetParameters(1.0228*PDEPar0,PDEPar1);
+  //if( SiPMType == "HPK" ) f_PDE -> SetParameters(PDEScale*1.0228*0.384,PDEScale*0.583);
+  //if( SiPMType == "FBK" ) f_PDE -> SetParameters(PDEScale*0.8847*0.466,PDEScale*0.314);
   
+  TF1* f_gain_default = new TF1("f_gain_default","[0]+[1]*x",0.,10.);
+  f_gain_default -> SetParameters(36900.,97600.);
+  TF1* f_gain = new TF1("f_gain","[0]+[1]*x",0.,10.);
+  double gainPar0 = opts.GetOpt<double>("SiPM.gainPar0");
+  double gainPar1 = opts.GetOpt<double>("SiPM.gainPar1");
+  f_gain -> SetParameters(gainPar0,gainPar1);
+
   TFile* sipmParams;
   if( SiPMType == "HPK" ) sipmParams = TFile::Open("data/sipm_spec_input_HDR2-015-v2-1e13.root","READ");
   if( SiPMType == "FBK" ) sipmParams = TFile::Open("data/sipm_spec_input_FBK-W7C-1e13.root","READ");
-  TF1* f_gain = (TF1*)( sipmParams->Get("fGain_vs_OV") );
+  //TF1* f_gain = (TF1*)( sipmParams->Get("fGain_vs_OV") );
   TF1* f_ENF = (TF1*)( sipmParams->Get("fENF_vs_OV") );
+  
   TF1* turnOn_PDE = new TF1("turnOn_PDE",Form("1.-%.2f/2E14*x",dropPDE),0.,2E14);
   TF1* turnOn_gain = new TF1("turnOn_gain",Form("1-%.2f/2E14*x",dropGain),0.,2E14);
   
@@ -519,8 +527,8 @@ int main(int argc, char** argv)
       f_DCRRef_vs_Vov -> SetParameter(iPar,DCRRef_pars[iPar]);
     }
     //float DCRRef = f_DCRRef_vs_Vov -> Eval(1.); // DCR at 1 V and - 30° C as per Carlos data
-    float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and -40° C as per TB data, Dec. 2021
-    //float DCRRef = f_DCRRef_vs_Vov -> Eval(0.9); // DCR at 0.9 V and -45° C as per Yuri data, Jun. 2022
+    //float DCRRef = f_DCRRef_vs_Vov -> Eval(0.8); // DCR at 0.8 V and -40° C as per TB data, Dec. 2021
+    float DCRRef = f_DCRRef_vs_Vov -> Eval(0.9); // DCR at 0.9 V and -45° C as per Yuri data, Jun. 2022
     
     float tResBest = 999999.;
     float tResBest_stoch = 999999.;
@@ -549,32 +557,34 @@ int main(int argc, char** argv)
     if( !optimizeTECsDeltaT ) { TStart = TECsDeltaT; TStop = TECsDeltaT; } 
     
     for(float effTECsDeltaT = TStart; effTECsDeltaT <= TStop; effTECsDeltaT+=0.5)
+    //for(float Vov = 1.0; Vov < 1.001; Vov += 0.01)
     for(float Vov = 0.2; Vov < 5.; Vov += 0.01)
     {
-      T_op = T_CO2 - effTECsDeltaT;
+      T_op = T_CO2;
+      if( useTECs ) T_op -= effTECsDeltaT;
       if( T_op < -50. ) continue;
       
       
       //-----------------------------------------------
       // evaluate effective DCR for a given OV and T_op
-      float DCR = ( 16300./8. * alpha * 1.E-17 * totFluence ) * // from HPK2E14 used at TB (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 29. GHz at Vov = 1.5 V, DCR(1.5)/DCR(0.8)~8)
-                  (f_DCRRef_vs_Vov->Eval(Vov)/DCRRef) *         // morphing vs. OV using CERN Oct. TB data
-                  ( DCRScale ) *
-                  f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
+      // float DCR = ( 16300./8. * alpha * 1.E-17 * totFluence ) * // from HPK2E14 used at TB (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 29. GHz at Vov = 1.5 V, DCR(1.5)/DCR(0.8)~8)
+      //               (f_DCRRef_vs_Vov->Eval(Vov)/DCRRef) *         // morphing vs. OV using CERN Oct. TB data
+      //               ( DCRScale ) *
+      //               f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
       
-      // float DCR = ( 3150 * alpha * 1.E-17 * totFluence ) *   // from HPK2E14 used at TB and measured by Yuri (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 5.61. GHz at Vov = 0.9 V, I = 0.1 A)
-      //                  ( f_DCRRef_vs_Vov->Eval(Vov)/DCRRef ) *    // morphing vs. OV using Yuri measurements
-      //                  ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) *
-      //                  ( f_ENF->Eval(0.9)/f_ENF->Eval(Vov) ) *
-      //                  ( DCRScale ) *
-      //                  f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
+      float DCR = ( 3150 * alpha * 1.E-17 * totFluence ) *   // from HPK2E14 used at TB and measured by Yuri (after 3.5d at 110° C, alpha is 0.89, assume 8% gain loss (i.e. 5.61. GHz at Vov = 0.9 V, I = 0.1 A)
+                          ( f_DCRRef_vs_Vov->Eval(Vov)/DCRRef ) *    // morphing vs. OV using Yuri measurements
+                          ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) *
+                          ( f_ENF->Eval(0.9)/f_ENF->Eval(Vov) ) *
+                          ( DCRScale ) *
+                          f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov);
       
       if( SiPMType == "FBK" ) DCR *= 1.10;
       
       float B = -0.00416498*alpha + 0.0798623;   // DCR scaling with temperature, including dependence of scaling factor on alpha
       //DCR = DCR * exp(B*(T_op-(-35.)));
-      DCR = DCR * exp(B*(T_op-(-40.)));
-      //DCR = DCR * exp(B*(T_op-(-45.)));
+      //DCR = DCR * exp(B*(T_op-(-40.)));
+      DCR = DCR * exp(B*(T_op-(-45.)));
       
 
       // cell occupancy due to DCR -- assuming here 2 tau_R
@@ -611,7 +621,7 @@ int main(int argc, char** argv)
       float nPE = 4.2 * LO * LOScale * (1-occupancy) * f_PDE->Eval(Vov)*(turnOn_PDE->Eval(fluence))/f_PDE_default->Eval(3.5);
       
       float sigma_stoch = 28. * sqrt(7000./(nPE*38.5/taud));
-      float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
+      float sigma_noise = sqrt( pow(noiseTerm/1.2/g_slewRate_vs_amp->Eval(nPE*gainScale*f_gain->Eval(Vov)*(turnOn_gain->Eval(fluence))/f_gain_default->Eval(3.5)/9500.),2) + pow(16.7,2) )/sqrt(2);
       float sigma_DCR   = 40. * 6000./(nPE*38.5/taud) * pow(DCR/30.,0.41);
       float sigma_clock = 15.;
       
@@ -643,7 +653,7 @@ int main(int argc, char** argv)
 
       if( isEoO )
       {
-	std::cout << "Vov: " << Vov << "   alpha: " << alpha << "   CurrRatio:  " << f_DCRRef_vs_Vov->Eval(Vov)/DCRRef << "   GainScale: " << ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) << "   PDEScale: " << f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov) << "   DCR: " << DCR << std::endl;
+	std::cout << "Vov: " << Vov << "   alpha: " << alpha << "   CurrRatio:  " << f_DCRRef_vs_Vov->Eval(Vov)/DCRRef << "   GainScale: " << ( f_gain->Eval(0.9)/f_gain->Eval(Vov) ) << "   PDEScale: " << f_PDE->Eval(Vov)/f_PDE_default->Eval(Vov) << "   nPE: " << nPE << "   DCR: " << DCR << "   sigma_DCR: " << sigma_DCR <<std::endl;
 	
         g_tRes_vs_Vov_EoO.SetPoint(g_tRes_vs_Vov_EoO.GetN(),Vov,tResCurr);
         g_tRes_stoch_vs_Vov_EoO.SetPoint(g_tRes_stoch_vs_Vov_EoO.GetN(),Vov,sigma_stoch);
